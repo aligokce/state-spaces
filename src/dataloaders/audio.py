@@ -350,3 +350,91 @@ class SpeechCommands09(AbstractAudioDataset):
         if self.dequantize:
             x = self.dequantizer(x).unsqueeze(1)
         return x, y, *z
+
+
+class Footstep(AbstractAudioDataset):
+
+    CLASSES = [
+        "Concrete_Clean",
+        "Concrete_Gritty",
+        "Gravel_Light",
+        "Gravel_Medium",
+        "Metal",
+        "Sand",
+        "Wood_Parquet",
+        "Wood_Plank"
+    ]
+
+    CLASS_TO_IDX = dict(zip(CLASSES, range(len(CLASSES))))
+
+    def __init__(
+        self, 
+        path, 
+        bits=8, 
+        split='train',
+        sample_len=8000,
+        quantization='linear', # [linear, mu-law]
+        return_type='autoregressive', # [autoregressive, None]
+        drop_last=False,
+        target_sr=None,
+        dequantize=False,
+        pad_len=None,
+        **kwargs,
+    ):
+        super().__init__(
+            bits=bits,
+            sample_len=sample_len,
+            quantization=quantization,
+            return_type=return_type,
+            split=split,
+            drop_last=drop_last,
+            target_sr=target_sr,
+            path=path,
+            dequantize=dequantize,
+            pad_len=pad_len,
+            **kwargs,
+        )
+
+    def setup(self):
+        with open(join(self.path, 'validation_list.txt')) as f:
+            validation_files = set([line.rstrip() for line in f.readlines()])
+        
+        with open(join(self.path, 'testing_list.txt')) as f:
+            test_files = set([line.rstrip() for line in f.readlines()])
+
+        # Get all files in the paths named after CLASSES
+        self.file_names = []
+        for class_name in self.CLASSES:
+            self.file_names += [
+                (class_name, file_name)
+                for file_name in listdir(join(self.path, class_name))
+                if file_name.endswith('.wav')
+            ]
+        
+        # Keep files based on the split
+        if self.split == 'train':
+            self.file_names = [
+                join(self.path, class_name, file_name) 
+                for class_name, file_name in self.file_names 
+                if join(class_name, file_name) not in validation_files
+                and join(class_name, file_name) not in test_files
+            ]
+        elif self.split == 'validation':
+            self.file_names = [
+                join(self.path, class_name, file_name)
+                for class_name, file_name in self.file_names
+                if join(class_name, file_name) in validation_files
+            ]
+        elif self.split == 'test':
+            self.file_names = [
+                join(self.path, class_name, file_name)
+                for class_name, file_name in self.file_names
+                if join(class_name, file_name) in test_files
+            ]
+
+    def __getitem__(self, index):
+        item = super().__getitem__(index)
+        x, y, *z = item
+        if self.dequantize:
+            x = self.dequantizer(x).unsqueeze(1)
+        return x, y, *z

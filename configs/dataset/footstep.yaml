@@ -1,0 +1,9 @@
+_name_: footstep
+path: footstep
+bits: 8
+sample_len: 8000  # diff from sc09
+quantization: linear # same with beethoven
+pad_len: null
+__l_max: ${.sample_len}
+# train_percentage: 0.88  # same with beethoven, added
+target_sr: 16000 # added for clarity
