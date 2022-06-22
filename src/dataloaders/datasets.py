@@ -1624,3 +1624,91 @@ class SpeechCommands09Autoregressive(SequenceDataset):
             return x, y, lengths
 
         self.collate_fn = collate_fn
+
+
+class FootstepAutoregressive(SequenceDataset):
+    _name_ = 'footstep'
+
+    @property
+    def d_input(self):
+        return 1
+
+    @property
+    def d_output(self):
+        return 1 << self.bits
+
+    @property
+    def l_output(self):
+        return self.sample_len
+
+    @property
+    def n_tokens(self):
+        return 1 << self.bits
+
+    @property
+    def init_defaults(self):
+        return {
+            'bits': 8,
+            'quantization': 'mu-law',
+            'dequantize': False,
+            'pad_len': None,
+        }
+
+    def setup(self):
+        from src.dataloaders.audio import FootstepAutoregressive
+        self.data_dir = self.data_dir or default_data_path / self._name_
+
+        self.dataset_train = FootstepAutoregressive(
+            path=self.data_dir,
+            bits=self.bits,
+            split='train',
+            quantization=self.quantization,
+            dequantize=self.dequantize,
+            pad_len=self.pad_len,
+        )
+
+        self.dataset_val = FootstepAutoregressive(
+            path=self.data_dir,
+            bits=self.bits,
+            split='validation',
+            quantization=self.quantization,
+            dequantize=self.dequantize,
+            pad_len=self.pad_len,
+        )
+
+        self.dataset_test = FootstepAutoregressive(
+            path=self.data_dir,
+            bits=self.bits,
+            split='test',
+            quantization=self.quantization,
+            dequantize=self.dequantize,
+            pad_len=self.pad_len,
+        )
+
+        self.sample_len = self.dataset_train.sample_len
+
+        def collate_fn(batch, resolution=1):
+            x, y, *z = zip(*batch)
+            assert len(z) == 0
+            lengths = torch.tensor([len(e) for e in x])
+            max_length = lengths.max()
+            if self.pad_len is None:
+                pad_length = int(min(2**max_length.log2().ceil(), self.sample_len) - max_length)
+            else:
+                pad_length = 0 # int(self.sample_len + self.pad_len - max_length)
+            x = nn.utils.rnn.pad_sequence(
+                x, 
+                padding_value=self.dataset_train.zero if not self.dequantize else 0., 
+                batch_first=True,
+            )
+            x = F.pad(x, (0, pad_length), value=self.dataset_train.zero if not self.dequantize else 0.)
+            x = x[:, ::resolution]
+            y = nn.utils.rnn.pad_sequence(
+                y, 
+                padding_value=-100, # pad with -100 to ignore these locations in cross-entropy loss
+                batch_first=True,
+            )
+            y = y[:, ::resolution]
+            return x, y, lengths
+
+        self.collate_fn = collate_fn
