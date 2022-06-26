@@ -1655,10 +1655,10 @@ class FootstepAutoregressive(SequenceDataset):
         }
 
     def setup(self):
-        from src.dataloaders.audio import FootstepAutoregressive
+        from src.dataloaders.audio import Footstep
         self.data_dir = self.data_dir or default_data_path / self._name_
 
-        self.dataset_train = FootstepAutoregressive(
+        self.dataset_train = Footstep(
             path=self.data_dir,
             bits=self.bits,
             split='train',
@@ -1667,7 +1667,7 @@ class FootstepAutoregressive(SequenceDataset):
             pad_len=self.pad_len,
         )
 
-        self.dataset_val = FootstepAutoregressive(
+        self.dataset_val = Footstep(
             path=self.data_dir,
             bits=self.bits,
             split='validation',
@@ -1676,7 +1676,7 @@ class FootstepAutoregressive(SequenceDataset):
             pad_len=self.pad_len,
         )
 
-        self.dataset_test = FootstepAutoregressive(
+        self.dataset_test = Footstep(
             path=self.data_dir,
             bits=self.bits,
             split='test',
