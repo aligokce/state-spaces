@@ -12,7 +12,7 @@ from torch.distributions import Categorical
 from tqdm.auto import tqdm
 
 from src import utils
-from src.dataloaders.audio import mu_law_decode
+from src.dataloaders.audio import linear_decode, mu_law_decode
 from src.models.baselines.samplernn import SampleRNN
 from src.models.baselines.wavenet import WaveNetModel
 from train import SequenceLightningModule
@@ -188,9 +188,13 @@ def main(args):
     )
 
     # Decode quantization
-    y = mu_law_decode(y.T)
+    if args.quantization == 'linear':
+        y = linear_decode(y.T)
+    elif args.quantization == 'mu-law':
+        y = mu_law_decode(y.T)
 
     # Sort based on likelihoods and save
+    os.makedirs(args.save_dir, exist_ok=True)
     y = y[np.argsort(logprobs.flatten())]
     for i, d in enumerate(y): 
         torchaudio.save(f'{args.save_dir}/unconditional_{args.dataset}_{args.model}_len_{args.sample_len/16000.:.2f}s_gen_{i+1}.wav', d.unsqueeze(0), 16000)
@@ -212,6 +216,7 @@ if __name__ == '__main__':
     parser.add_argument('--split', type=str, help='If conditioning, which split of the data to use', default='val', choices=['val', 'test'])
     parser.add_argument('--save_dir', type=str, help='Save directory', default='sashimi/samples')
     parser.add_argument('--load_data', help='Load the dataset', action='store_true')
+    parser.add_argument('--quantization', help='Load the dataset', default='mu-law', choices=['linear', 'mu-law'])
     
     args = parser.parse_args()
     os.makedirs(args.save_dir, exist_ok=True)
