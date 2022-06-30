@@ -156,8 +156,12 @@ def main(args):
     model.to('cuda')
 
     # Load checkpoint
-    state_dict = torch.load(f'sashimi/checkpoints/{args.model}_{args.dataset}.pt', map_location='cuda')
-    model.load_state_dict(state_dict)
+    if args.checkpoint_path:
+        state_dict = torch.load(args.checkpoint_path, map_location='cuda')['state_dict']
+        model.load_state_dict(state_dict)
+    else:
+        state_dict = torch.load(f'sashimi/checkpoints/{args.model}_{args.dataset}.pt', map_location='cuda')
+        model.load_state_dict(state_dict)
 
     # Setup: required for S4 modules in SaShiMi
     for module in model.modules():
