@@ -130,8 +130,9 @@ def main(args):
     
     # Load in the model config
     if args.model == 'sashimi':
-        if args.dataset == 'sc09':
-            config = compose(config_name="config.yaml", overrides=overrides + ['model.layer.hurwitz=false', 'decoder.mode=last'])
+        if args.dataset in ['sc09', 'footstep']:
+            # config = compose(config_name="config.yaml", overrides=overrides + ['model.layer.hurwitz=false', 'decoder.mode=last'])
+            config = compose(config_name="config.yaml", overrides=overrides + ['decoder.mode=last'])
         else:
             config = compose(config_name="config.yaml", overrides=overrides + ['model.layer.hurwitz=false', 'model.layer.postact=null', 'decoder.mode=last'])
             
@@ -200,7 +201,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Audio generation with SaShiMi.')
 
     parser.add_argument('--model', type=str, default='sashimi', help='Model name', choices=['sashimi', 'wavenet', 'samplernn'])
-    parser.add_argument('--dataset', type=str, default='youtubemix', help='Dataset name', choices=['youtubemix', 'sc09'])
+    parser.add_argument('--dataset', type=str, default='youtubemix', help='Dataset name', choices=['youtubemix', 'sc09', 'footstep'])
     parser.add_argument('--checkpoint_path', type=str, help='Path to checkpoint')
     parser.add_argument('--sample_len', type=int, help='Sample length', default=16000)
     parser.add_argument('--n_samples', type=int, help='Number of samples', default=32)
