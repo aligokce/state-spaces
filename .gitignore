@@ -122,3 +122,4 @@ dmypy.json
 # End of https://www.gitignore.io/api/python
 *.pt
 config_tree.txt
+sashimi/samples
